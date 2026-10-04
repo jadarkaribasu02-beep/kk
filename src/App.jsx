@@ -17,34 +17,44 @@ export default function App() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [resumeOpen, setResumeOpen] = useState(false);
   const [cursorOffset, setCursorOffset] = useState({ x: 0, y: 0 });
+
   const videoRef = useRef(null);
   const isInteractingRef = useRef(false);
   const timeoutRef = useRef(null);
 
-  // Mouse cursor reaction: Cat turns, wags tail, and reacts as cursor moves
+  // Mouse cursor reaction
   useEffect(() => {
     const handleMouseMove = (e) => {
       const { innerWidth, innerHeight } = window;
+
       const normX = (e.clientX / innerWidth - 0.5) * 2;
       const normY = (e.clientY / innerHeight - 0.5) * 2;
 
-      // 3D Parallax translation (subtle, never exposes edges)
+      // 3D Parallax translation
       setCursorOffset({
         x: normX * -15,
         y: normY * -10
       });
 
-      // Scrub the cat video animation to react directly to cursor X position
+      // Scrub cat video according to cursor position
       if (videoRef.current && videoRef.current.duration) {
         isInteractingRef.current = true;
+
         const duration = videoRef.current.duration;
-        const targetRatio = Math.max(0, Math.min(1, e.clientX / innerWidth));
+
+        const targetRatio = Math.max(
+          0,
+          Math.min(1, e.clientX / innerWidth)
+        );
+
         videoRef.current.currentTime = targetRatio * duration;
 
-        // Resume gentle playback when cursor pauses
+        // Resume playback when cursor stops
         clearTimeout(timeoutRef.current);
+
         timeoutRef.current = setTimeout(() => {
           isInteractingRef.current = false;
+
           if (videoRef.current) {
             videoRef.current.play().catch(() => {});
           }
@@ -53,101 +63,140 @@ export default function App() {
     };
 
     window.addEventListener('mousemove', handleMouseMove);
+
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       clearTimeout(timeoutRef.current);
     };
   }, []);
 
+  // Feed cat animation
   const handleFeedCat = () => {
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
       videoRef.current.playbackRate = 1.8;
+
       videoRef.current.play().catch(() => {});
+
       setTimeout(() => {
-        if (videoRef.current) videoRef.current.playbackRate = 1.0;
+        if (videoRef.current) {
+          videoRef.current.playbackRate = 1.0;
+        }
       }, 2000);
     }
   };
 
   return (
     <div className="relative bg-[#0c1510] text-slate-100 min-h-screen overflow-x-hidden selection:bg-emerald-500 selection:text-white">
-      
-      {/* 2.8 Second Cute Loading Animation */}
-      {isLoading && <LoadingScreen onFinish={() => setIsLoading(false)} />}
+
+      {/* Loading Animation */}
+      {isLoading && (
+        <LoadingScreen
+          onFinish={() => setIsLoading(false)}
+        />
+      )}
 
       {/* Nature & Forest Ambient Glows */}
       <Background3D />
 
       {/* Navigation Header */}
-      <Navbar 
-        onOpenResume={() => setResumeOpen(true)} 
+      <Navbar
+        onOpenResume={() => setResumeOpen(true)}
         onTriggerReload={() => setIsLoading(true)}
       />
 
-      {/* Main Content Sections */}
+      {/* Main Content */}
       <main className="relative z-10">
-        
-        {/* HERO SECTION: Full Edge-to-Edge Forest Video with Cat positioned on Right, Frosted Cards on Left */}
+
+        {/* ================= HERO SECTION ================= */}
+
         <section className="relative min-h-screen overflow-hidden flex items-center">
-          
-          {/* Fullscreen Video Background: Object-cover edge-to-edge (NO blank spaces) */}
+
+          {/* Fullscreen Video Background */}
           <div className="absolute inset-0 w-full h-full overflow-hidden z-0">
+
             <video
               ref={videoRef}
-              src="/cat-animated.mp4"
+
+              /*
+               * IMPORTANT:
+               * Uses Vite BASE_URL so the video works on:
+               * https://jadarkaribasu02-beep.github.io/kk/
+               */
+              src={`${import.meta.env.BASE_URL}cat-animated.mp4`}
+
               autoPlay
               loop
               muted
               playsInline
+              preload="auto"
+
               style={{
                 transform: `scale(1.08) translate3d(${cursorOffset.x}px, ${cursorOffset.y}px, 0px)`,
-                transition: 'transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1)'
+                transition:
+                  'transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1)'
               }}
+
               className="w-full h-full object-cover object-[72%_center] pointer-events-none"
             />
-            
-            {/* Subtle Vignette Gradient: Forest is visible everywhere, cards are clear and readable */}
+
+            {/* Forest Gradient */}
             <div className="absolute inset-0 bg-gradient-to-r from-[#0c1510]/60 via-[#0c1510]/15 to-transparent pointer-events-none"></div>
+
+            {/* Bottom Gradient */}
             <div className="absolute inset-0 bg-gradient-to-t from-[#0c1510] via-transparent to-[#0c1510]/30 pointer-events-none"></div>
+
           </div>
 
-          {/* Foreground Hero Content: Frosted Cards on Left */}
-          <HeroOverlay 
-            onOpenResume={() => setResumeOpen(true)} 
+          {/* Hero Content */}
+          <HeroOverlay
+            onOpenResume={() => setResumeOpen(true)}
             onFeedCat={handleFeedCat}
           />
+
         </section>
 
-        {/* About Section */}
+        {/* ================= ABOUT ================= */}
+
         <AboutSection />
 
-        {/* Skills & Tech Matrix */}
+        {/* ================= SKILLS ================= */}
+
         <Skills3DSection />
 
-        {/* 3D Projects Showcase */}
-        <Projects3DSection onSelectProject={(project) => setSelectedProject(project)} />
+        {/* ================= PROJECTS ================= */}
 
-        {/* Codolio & Competitive Coding */}
+        <Projects3DSection
+          onSelectProject={(project) =>
+            setSelectedProject(project)
+          }
+        />
+
+        {/* ================= CODOLIO ================= */}
+
         <CodolioSection />
 
-        {/* Contact & 3D Interactive Form */}
+        {/* ================= CONTACT ================= */}
+
         <Contact3DSection />
 
       </main>
 
       {/* Footer */}
-      <Footer onTriggerReload={() => setIsLoading(true)} />
-
-      {/* Modals */}
-      <ProjectModal 
-        project={selectedProject} 
-        onClose={() => setSelectedProject(null)} 
+      <Footer
+        onTriggerReload={() => setIsLoading(true)}
       />
 
-      <ResumeModal 
-        isOpen={resumeOpen} 
-        onClose={() => setResumeOpen(false)} 
+      {/* Project Modal */}
+      <ProjectModal
+        project={selectedProject}
+        onClose={() => setSelectedProject(null)}
+      />
+
+      {/* Resume Modal */}
+      <ResumeModal
+        isOpen={resumeOpen}
+        onClose={() => setResumeOpen(false)}
       />
 
     </div>
